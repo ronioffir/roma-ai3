@@ -167,3 +167,9 @@ Now, first task: What do I have in my calendar tomorrow?
 ```text
 Write a Gmail draft to myself with the subject "L06 test" and add a calendar event for today, 4 hours from now, called "MCP works".
 ```
+
+### Prompt 9
+
+```text
+Great. Now send the "L06 test" draft and delete the "Study group" event.
+```
