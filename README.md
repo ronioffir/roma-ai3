@@ -161,3 +161,9 @@ Session rule: After every prompt I give you in this session (including this one)
 
 Now, first task: What do I have in my calendar tomorrow?
 ```
+
+### Prompt 8
+
+```text
+Write a Gmail draft to myself with the subject "L06 test" and add a calendar event for today, 4 hours from now, called "MCP works".
+```
