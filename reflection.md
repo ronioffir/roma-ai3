@@ -27,7 +27,7 @@ We left out every tool that sends or deletes: no `send_email`, no `delete_email`
 
 The reason is that these actions cannot be undone and they reach other people. A sent email cannot be pulled back, and a deleted event is gone. An agent can misread a request or pick the wrong recipient or the wrong event, so the server only does things that are easy to review and reverse: a draft waits for a human to press Send, and a new event can be removed by hand.
 
-The limit is in the server itself, not in a promise from the agent. The tool does not exist and the token was only granted read, compose-drafts and calendar-events permissions, so no prompt can talk the agent into sending. The cost is small: we send drafts and delete events ourselves, as we saw when the "MCP works" event landed on the wrong date and had to be moved by hand.
+The limit is in the server's code, not in a promise from the agent: the tool does not exist, so no prompt can make the agent send or delete through this server. The token is not the limit. Its `gmail.compose` scope would allow sending a draft and its `calendar.events` scope would allow deleting an event, so the code is the only thing standing in the way, and it must stay that way. The cost is small: we send drafts and delete events ourselves, as we saw when the "MCP works" event landed on the wrong date and had to be moved by hand.
 
 ## L05 vs L06: what changed?
 
