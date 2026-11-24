@@ -147,3 +147,9 @@ Rule for the rest of this session: After every prompt I give you from now on, up
 3. Add "*.pdf" to .gitignore so the worksheet PDF stays untracked/ignored.
 4. Also clean up the mixed old text inside README.md (under "Prompts Log" there are leftover lines from the old README mixed between Prompt 1, 2, and 3) so README.md is completely clean before committing.
 ```
+
+### Prompt 6
+
+```text
+Register this server in Claude Code with "claude mcp add": local scope, name "gmail-calendar", stdio transport, the environment variable GOOGLE_PRIVATE_DIR=/Users/maayanshiri/Desktop/roma-ai3, and the command "uv run --directory /Users/maayanshiri/Desktop/roma-ai3 server.py". Then update README.md Prompts Log, commit and push to GitHub, and tell me what to do next.
+```
