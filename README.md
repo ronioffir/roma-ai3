@@ -200,3 +200,9 @@ of .gitignore.
 ```text
 Write and run a small test script, test_server.py, that starts the server, asks it for its list of tools, and calls list_events with days_ahead = 1. Set GOOGLE_PRIVATE_DIR=/Users/maayanshiri/Desktop/roma-ai3 for the test. Show me the output.
 ```
+
+### Prompt 13
+
+```text
+what do I have in my calendar tomorrow?
+```
