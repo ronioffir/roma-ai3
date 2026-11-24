@@ -223,3 +223,13 @@ Update reflection.md so that:
 
 Then update README.md Prompts Log, verify no secrets are staged, commit, and push to origin main.
 ```
+
+### Prompt 16
+
+```text
+Act as my meeting coordinator. Find the latest meeting request in my email.
+Check my calendar for that time. If I am free, create the event and prepare a
+reply draft confirming it. If I am busy, do not create an event; prepare a
+reply draft that suggests two free times. Never send anything. Show me what
+you did, step by step.
+```
