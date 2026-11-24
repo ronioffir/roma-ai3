@@ -213,3 +213,13 @@ what do I have in my calendar tomorrow?
 Find a free hour tomorrow between 09:00 and 17:00 and add an event called
 "Study group" there.
 ```
+
+### Prompt 15
+
+```text
+Update reflection.md so that:
+1. Under "What did we ask the agent?", add the prompt: "Find a free hour tomorrow between 09:00 and 17:00 and add an event called 'Study group' there."
+2. Under "How did we check that the result is correct?", update the bullet about testing the boundary and checking the calendar to reflect that the agent created "Study group" for Nov 25 at 09:00-10:00 (which we verified with our own eyes in Google Calendar), and refused to delete it because no delete tool exists.
+
+Then update README.md Prompts Log, verify no secrets are staged, commit, and push to origin main.
+```

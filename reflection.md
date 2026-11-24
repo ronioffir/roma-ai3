@@ -9,6 +9,7 @@ Then we registered the server in Claude Code and used it in plain language:
 - "What do I have in my calendar tomorrow?"
 - "Write a Gmail draft to myself with the subject 'L06 test' and add a calendar event 4 hours from now called 'MCP works'."
 - "Send the 'L06 test' draft and delete the 'Study group' event." This one was a deliberate test of the limits.
+- "Find a free hour tomorrow between 09:00 and 17:00 and add an event called 'Study group' there."
 
 Around the work we also asked for a `.gitignore`, a `PRD.md`, a `README.md` with a Prompts Log, and a commit and push after every prompt.
 
@@ -16,10 +17,10 @@ Around the work we also asked for a `.gitignore`, a `PRD.md`, a `README.md` with
 
 - **Against the real account.** The calendar answer matched the one event actually in the calendar ("Test event from Python", 23:16 to 00:16). After the create request, `list_events` showed "MCP works" at 02:57 to 03:57 on Nov 25, and the draft tool returned a draft id with the status "It was NOT sent".
 - **By reading the details, not just the "done".** The agent pointed out that "today, 4 hours from now" was no longer today (22:57 + 4h = 02:57 the next day), and that it had chosen the one-hour length and the draft body itself. Those are the places a result can be quietly wrong.
-- **By testing the boundary.** When asked to send and delete, the agent did neither and said so. It also checked 90 days ahead and reported that no "Study group" event exists.
+- **By testing the boundary and checking the calendar.** When asked to send the draft and delete "Study group", the agent did neither and said why: no send or delete tool exists. At that point it also checked 90 days ahead and reported that no "Study group" event existed yet. Later, asked to find a free hour, it ran `find_free_slots`, saw that 09:00 to 17:00 was open, and created "Study group" for Nov 25 at 09:00 to 10:00. We verified that event with our own eyes in Google Calendar. The agent still cannot delete or move it, because the server has no tool for that.
 - **In git.** Before every commit we looked at the staged file list. Only `README.md` (and now `reflection.md`) was staged; `token.json` and `client_secret*.json` never were.
 
-What is still worth doing by hand: open Gmail Drafts and Google Calendar and look at the draft and the event with our own eyes.
+What is still worth doing by hand: open Gmail Drafts and look at the "L06 test" draft the same way.
 
 ## Which tool did we leave out, and why?
 
