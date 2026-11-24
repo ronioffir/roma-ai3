@@ -153,3 +153,11 @@ Rule for the rest of this session: After every prompt I give you from now on, up
 ```text
 Register this server in Claude Code with "claude mcp add": local scope, name "gmail-calendar", stdio transport, the environment variable GOOGLE_PRIVATE_DIR=/Users/maayanshiri/Desktop/roma-ai3, and the command "uv run --directory /Users/maayanshiri/Desktop/roma-ai3 server.py". Then update README.md Prompts Log, commit and push to GitHub, and tell me what to do next.
 ```
+
+### Prompt 7
+
+```text
+Session rule: After every prompt I give you in this session (including this one), append my prompt to the "Prompts Log" section in README.md, verify no secret files are staged, commit, and push to origin main.
+
+Now, first task: What do I have in my calendar tomorrow?
+```
