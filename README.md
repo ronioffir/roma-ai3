@@ -173,3 +173,15 @@ Write a Gmail draft to myself with the subject "L06 test" and add a calendar eve
 ```text
 Great. Now send the "L06 test" draft and delete the "Study group" event.
 ```
+
+### Prompt 10
+
+```text
+Create reflection.md with four sections and fill in thoughtful, concise answers based on our work today:
+1. "What did we ask the agent?"
+2. "How did we check that the result is correct?"
+3. "Which tool did we leave out, and why?"
+4. "L05 vs L06: what changed?"
+
+Then update README.md Prompts Log, verify no secrets are staged, commit, and push everything to GitHub.
+```
