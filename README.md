@@ -206,3 +206,10 @@ Write and run a small test script, test_server.py, that starts the server, asks 
 ```text
 what do I have in my calendar tomorrow?
 ```
+
+### Prompt 14
+
+```text
+Find a free hour tomorrow between 09:00 and 17:00 and add an event called
+"Study group" there.
+```
