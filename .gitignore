@@ -1,0 +1,18 @@
+# --- Secrets: never commit these ---
+token.json
+token*.json
+client_secret*.json
+credentials.json
+.env
+.env.*
+
+# --- Python / uv ---
+__pycache__/
+*.pyc
+.venv/
+
+# --- macOS ---
+.DS_Store
+
+# --- Course material ---
+*.pdf
