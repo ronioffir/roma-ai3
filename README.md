@@ -194,3 +194,9 @@ server.py: name, one-line description, and which Google API call each tool
 uses. Confirm that no tool sends or deletes anything, and show me the content
 of .gitignore.
 ```
+
+### Prompt 12
+
+```text
+Write and run a small test script, test_server.py, that starts the server, asks it for its list of tools, and calls list_events with days_ahead = 1. Set GOOGLE_PRIVATE_DIR=/Users/maayanshiri/Desktop/roma-ai3 for the test. Show me the output.
+```
