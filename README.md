@@ -185,3 +185,12 @@ Create reflection.md with four sections and fill in thoughtful, concise answers 
 
 Then update README.md Prompts Log, verify no secrets are staged, commit, and push everything to GitHub.
 ```
+
+### Prompt 11
+
+```text
+Show me the file tree of this folder. Then show a table of the tools in
+server.py: name, one-line description, and which Google API call each tool
+uses. Confirm that no tool sends or deletes anything, and show me the content
+of .gitignore.
+```
