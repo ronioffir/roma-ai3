@@ -1,0 +1,48 @@
+You are running inside Antigravity (`agy`) on Windows PowerShell 5 (`powershell.exe` / PowerShell 5.1). Use PowerShell 5 compatible syntax only (avoid PowerShell 7-only operators such as `&&` or `||`; use `;` or separate commands and standard `Test-Path` / `New-Item` / `git` commands).
+
+Your task is to perform a thorough, critical audit of the GitHub repository `git@github.com:ronioffir/roma-ai3.git` against the L06 assignment specification ("MCP Server for Gmail and Calendar", Vibe Coding / AI Agents course, taught by Rami, based on Dr. Yoram Segal's slides 21-37), plus higher-bar expectations (`README.md`, a `PRD`, and an A+ / 100-grade submission standard), and then save both THIS EXACT PROMPT and YOUR FULL REVIEW RESPONSE inside a dedicated separate Antigravity folder and push them to Git.
+
+### Step 1: Repository Access & Secret Safety
+- Check the current directory and whether `roma-ai3` is already present or needs to be cloned from `git@github.com:ronioffir/roma-ai3.git` into a working folder.
+- STRICT SECURITY RULE: Never print, read, copy, commit, or push `token.json`, `client_secret*.json`, `credentials.json`, `.env`, or personal local paths/secrets. Before any `git add` or `git commit`, inspect `git status` and `.gitignore` to verify no secrets or sensitive files are tracked or staged.
+
+### Step 2: Critical Audit Against L06 Assignment Requirements
+Critically evaluate the repository in `roma-ai3` for every requirement and edge case of L06:
+1. **MCP Server Architecture & Setup**:
+   - Python MCP server using the official MCP Python SDK (`FastMCP`), runnable with `uv`, using `stdio` transport (no stdout pollution that breaks stdio).
+   - Reads private credentials directory from the `GOOGLE_PRIVATE_DIR` environment variable (pointing to the private folder, not a file), reuses existing `client_secret*.json` and `token.json` without copying them into the project, never opens a browser from the server, and enforces `Asia/Jerusalem` time zone.
+   - Python files kept concise (ideally under ~150 lines each, clean modular structure).
+2. **Exact Toolset & Safety Boundaries**:
+   - Exposes **exactly these 6 tools** with clear English descriptions:
+     1. `search_emails(query, max_results)`
+     2. `read_email(message_id)`
+     3. `create_draft(to, subject, body)` (draft only)
+     4. `list_events(days_ahead)`
+     5. `find_free_slots(date, duration_minutes)`
+     6. `create_event(title, start, end, description)`
+   - Explicitly verify there are **no send or delete tools** (and check if any extra/unwanted tools exist).
+3. **Testing, Registration & Deliverables**:
+   - Check for test/verification script(s) (e.g., `test_server.py` listing the 6 tools and testing `list_events` with `days_ahead=1` and `GOOGLE_PRIVATE_DIR`).
+   - Check MCP registration configuration / documentation (such as Claude Code / Antigravity `.agents/mcp_config.json` notes, noting whether local/personal paths are excluded or safely documented).
+   - Check `.gitignore` coverage (`token.json`, `client_secret*.json`, `credentials.json`, `.env`, build/cache artifacts, etc.).
+   - Check `reflection.md` with the required sections:
+     - "What did we ask the agent?"
+     - "How did we check that the result is correct?"
+     - "Which tool did we leave out, and why?"
+     - "L05 vs L06: what changed?"
+     and verify it is filled thoughtfully (not just empty placeholders).
+   - Check `README.md` for clear run instructions AND the list of prompts used.
+
+### Step 3: Beyond-Baseline Check — `README.md`, `PRD`, and 100/100 Readiness for Rami
+Act as a strict, constructive course grader / senior engineer evaluating whether this submission deserves **100 out of 100 from Rami**:
+- **README.md**: Is it clear, accurate, well-structured, easy to reproduce, and complete with setup/run steps and prompts used?
+- **PRD (Product Requirements Document)**: Is there a PRD in the repository (e.g., `PRD.md` or equivalent)? If yes, evaluate its scope, architecture, tool contract, security/privacy rules, edge cases, and non-goals. If missing or weak, call it out directly and specify what is needed.
+- **Grade & Gaps**: Give an honest critical score/assessment toward a 100/100 submission for Rami, list exact strengths, flag every defect/missing item/risk (e.g., missing files, hardcoded paths, missing error handling, unclear docs, BiDi/formatting/code smells), and provide concrete, prioritized fixes.
+
+### Step 4: Save Artifacts in a Separate Antigravity Folder & Push to Git
+- Create a dedicated separate folder for Antigravity's audit artifacts (for example `antigravity-review/` inside the repository or alongside it—ensure it is a clean, dedicated Antigravity folder and properly tracked in Git without secrets).
+- Save inside that separate folder:
+  1. `prompt.txt` (containing the exact prompt you received).
+  2. `review_report.md` (containing your complete critical review, findings, PRD/README evaluation, and 100/100 assessment for Rami).
+- Run `git status` to confirm only intended non-secret files are staged, commit with a clear message (e.g., `Add Antigravity critical L06 audit and prompt`), and run `git push`.
+- Finally, present the full review clearly in your response and confirm the exact file paths, commit hash/status, and `git push` result.
