@@ -10,6 +10,8 @@ Then we registered the server in Claude Code and used it in plain language:
 - "Write a Gmail draft to myself with the subject 'L06 test' and add a calendar event 4 hours from now called 'MCP works'."
 - "Send the 'L06 test' draft and delete the 'Study group' event." This one was a deliberate test of the limits.
 - "Find a free hour tomorrow between 09:00 and 17:00 and add an event called 'Study group' there."
+- "Act as my meeting coordinator." (Prompt 16) One request that needed the whole chain: find the latest meeting request in the inbox, check the calendar for that time, then either create the event and draft a confirmation, or draft a reply with two other times. Never send.
+- "Write and run test_server.py." A script that starts the server, asks for its tool list and calls `list_events`.
 
 Around the work we also asked for a `.gitignore`, a `PRD.md`, a `README.md` with a Prompts Log, and a commit and push after every prompt.
 
@@ -20,7 +22,9 @@ Around the work we also asked for a `.gitignore`, a `PRD.md`, a `README.md` with
 - **By testing the boundary and checking the calendar.** When asked to send the draft and delete "Study group", the agent did neither and said why: no send or delete tool exists. At that point it also checked 90 days ahead and reported that no "Study group" event existed yet. Later, asked to find a free hour, it ran `find_free_slots`, saw that 09:00 to 17:00 was open, and created "Study group" for Nov 25 at 09:00 to 10:00. We verified that event with our own eyes in Google Calendar. The agent still cannot delete or move it, because the server has no tool for that.
 - **In git.** Before every commit we looked at the staged file list. Only `README.md` (and now `reflection.md`) was staged; `token.json` and `client_secret*.json` never were.
 
-What is still worth doing by hand: open Gmail Drafts and look at the "L06 test" draft the same way.
+- **With an automated test.** `test_server.py` starts the real server over stdio, sends `tools/list` and calls `list_events(days_ahead=1)`. It printed the six expected tools and `PASS`. This checks the server itself, without an agent in the middle, and can be rerun after every change. `test_unit.py` adds offline checks that need no Google account.
+- **By following the coordinator step by step.** In Prompt 16 the agent showed each step: the request it found ("next Tuesday at 10:00 for 45 minutes"), the date it worked out (Dec 1), the free-slot check, the event it created and the full text of the reply draft. It also said what it could not do: the draft is a new message, not a reply inside the original thread. Because every step was visible, each one could be checked on its own.
+- **Gmail Drafts check: done.** A search for `in:draft` shows both drafts, "L06 test" and "Re: Meeting", still in Drafts and unsent.
 
 ## Which tool did we leave out, and why?
 

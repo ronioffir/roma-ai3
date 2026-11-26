@@ -5,7 +5,7 @@ import html
 import re
 from email.message import EmailMessage
 
-from google_auth import GMAIL_COMPOSE, GMAIL_READ, gmail, require_scope
+from google_auth import GMAIL_COMPOSE, GMAIL_READ, execute, gmail, require_scope
 
 MAX_BODY_CHARS = 20000
 
@@ -55,21 +55,13 @@ def _attachment_names(payload: dict) -> list[str]:
 def search_emails(query: str, max_results: int = 10) -> list[dict]:
     require_scope(GMAIL_READ)
     limit = max(1, min(int(max_results), 50))
-    found = gmail().users().messages().list(userId="me", q=query, maxResults=limit).execute()
+    found = execute(gmail().users().messages().list(userId="me", q=query, maxResults=limit), "search Gmail")
     results = []
     for item in found.get("messages", []):
-        message = (
-            gmail()
-            .users()
-            .messages()
-            .get(
-                userId="me",
-                id=item["id"],
-                format="metadata",
-                metadataHeaders=["From", "Subject", "Date"],
-            )
-            .execute()
+        request = gmail().users().messages().get(
+            userId="me", id=item["id"], format="metadata", metadataHeaders=["From", "Subject", "Date"]
         )
+        message = execute(request, "read a search result")
         headers = _headers(message)
         results.append(
             {
@@ -85,7 +77,8 @@ def search_emails(query: str, max_results: int = 10) -> list[dict]:
 
 def read_email(message_id: str) -> dict:
     require_scope(GMAIL_READ)
-    message = gmail().users().messages().get(userId="me", id=message_id, format="full").execute()
+    request = gmail().users().messages().get(userId="me", id=message_id, format="full")
+    message = execute(request, f"read email '{message_id}'")
     headers = _headers(message)
     body = _body_text(message.get("payload", {}))
     return {
@@ -107,7 +100,8 @@ def create_draft(to: str, subject: str, body: str) -> dict:
     message["Subject"] = subject
     message.set_content(body)
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
-    draft = gmail().users().drafts().create(userId="me", body={"message": {"raw": raw}}).execute()
+    request = gmail().users().drafts().create(userId="me", body={"message": {"raw": raw}})
+    draft = execute(request, "create the draft")
     return {
         "draft_id": draft["id"],
         "status": "Draft saved in Gmail > Drafts. It was NOT sent.",

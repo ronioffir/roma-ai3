@@ -39,14 +39,17 @@ server.py            FastMCP server "gmail-calendar": declares the 6 tools
                          Gmail API v1 / Calendar API v3
 
 authorize.py         one-time sign-in, run by hand, separate from the server
-main.py              last week's test program (not part of the server)
+test_unit.py         offline unit tests (no network, no secrets)
+test_server.py       live smoke test: starts the server over stdio
+main.py              L05 legacy test script (not part of the server)
 ```
 
 - **Language / runtime:** Python 3.12, run with `uv`.
 - **SDK:** the official MCP Python SDK, FastMCP API (`mcp` 1.x; pinned `<2`
   because 2.x renamed FastMCP).
 - **Transport:** stdio. The server writes nothing to stdout except MCP messages.
-- **Time zone:** Asia/Jerusalem for all inputs and outputs.
+- **Time zone:** Asia/Jerusalem for all inputs and outputs. The `tzdata`
+  package is a dependency so the zone is also available on Windows.
 - **Size rule:** every Python file is under 150 lines.
 
 ## 4. Tools
@@ -68,6 +71,44 @@ Details:
   "busy" events as blocking the whole day, and never offers times already past.
 - `create_event` reads a date-time without an offset as Asia/Jerusalem time,
   rejects an end that is not after the start, and sends no notifications.
+
+### Error handling and edge cases
+
+Every failure reaches the client as a short error message. Messages never
+contain file contents, token values or stack traces, and the server keeps
+running.
+
+**Input validation**
+
+| Input | Rule | If broken |
+|-------|------|-----------|
+| `date` | `YYYY-MM-DD` | Error that names the expected format |
+| `start`, `end` | ISO 8601, e.g. `2026-12-01T14:00` | Error that names the expected format |
+| `end` | Must be after `start` | Error; nothing is created |
+| `duration_minutes` | Greater than 0 | Error |
+| `max_results` | 1-50 | Out-of-range values are clamped into the range |
+| `days_ahead` | 1-90 | Out-of-range values are clamped into the range |
+
+**Setup and Google errors**
+
+| Situation | What the tool returns |
+|-----------|-----------------------|
+| `GOOGLE_PRIVATE_DIR` not set, or not an existing folder | Error naming the variable |
+| `token.json` missing, unreadable, or not refreshable | Error asking the user to run `authorize.py` |
+| Token lacks a needed scope | Error naming the missing permission and `authorize.py` |
+| Google answers 401 | "Google rejected the saved token" plus the `authorize.py` hint; the cached token is dropped |
+| Google answers 400 / 403 / 404 / 429 | "Could not <action>: <reason> (HTTP <code>)": invalid request, permission or quota, not found, rate limit |
+
+`token.json` is reloaded whenever the file changes, so running `authorize.py`
+again takes effect without restarting the server.
+
+**Calendar slot rules (`find_free_slots`)**
+
+- Events marked "free" (`transparency: "transparent"`) do not block time.
+- Invitations the user declined do not block time.
+- All-day events marked "busy" block the whole day.
+- For today's date, times that have already passed are not offered.
+- Everything is computed in Asia/Jerusalem, including summer time changes.
 
 ## 5. Security boundaries
 
@@ -102,7 +143,11 @@ Details:
 
 | Variable | Required | Meaning |
 |----------|----------|---------|
-| `GOOGLE_PRIVATE_DIR` | Yes | Absolute path of the folder holding `client_secret*.json` and `token.json`. For this project: `/Users/maayanshiri/Desktop/roma-ai3`. |
+| `GOOGLE_PRIVATE_DIR` | Yes | Absolute path of the folder holding `client_secret*.json` and `token.json`, for example `/path/to/private-folder`. |
+
+Keep this folder **outside** the `roma-ai3` Git repository (for example
+`~/private/gmail-calendar` or `C:\Users\<user>\private\gmail-calendar`), so the
+secret files can never be committed by accident.
 
 If the variable is missing or wrong, every tool returns a clear error and the
 server keeps running.
@@ -112,5 +157,27 @@ server keeps running.
 - The server starts with `uv run server.py` and answers MCP `initialize` with
   the name `gmail-calendar`.
 - `tools/list` returns exactly the six tools above, each with an English description.
-- No file in the repository is 150 lines or longer.
+- No Python file in the repository is 150 lines or longer.
 - `git status` never shows `token.json` or `client_secret*.json`.
+- The offline unit tests and the live smoke test pass (see section 8).
+
+## 8. Verification plan
+
+| Acceptance criterion | How it is checked |
+|----------------------|-------------------|
+| Server starts and answers `initialize` | `test_server.py` (live, over stdio) |
+| Exactly six tools, none that sends or deletes | `test_unit.py` (`ServerTools`) offline, and `test_server.py` live |
+| A real tool call works end to end | `test_server.py` calls `list_events(days_ahead=1)` |
+| Clear errors for a missing folder or token; token reload | `test_unit.py` (`GoogleAuth`) |
+| Email text handling and truncation | `test_unit.py` (`GmailTools`) |
+| Free-slot rules, date validation, Asia/Jerusalem | `test_unit.py` (`CalendarTools`) |
+| No Python file is 150 lines or longer | `wc -l *.py` |
+| No secrets in git | `git status` and `git ls-files` before every commit |
+| No send, no delete (manual boundary check) | Ask the agent to send a draft and delete an event; it must do neither and explain that no such tool exists |
+
+Commands:
+
+```bash
+uv run python -m unittest -v test_unit.py
+GOOGLE_PRIVATE_DIR=/path/to/private-folder uv run test_server.py
+```

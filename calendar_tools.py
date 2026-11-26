@@ -8,7 +8,7 @@ from datetime import date as date_type
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from google_auth import CALENDAR_EVENTS, TIME_ZONE, calendar, require_scope
+from google_auth import CALENDAR_EVENTS, TIME_ZONE, calendar, execute, require_scope
 
 TZ = ZoneInfo(TIME_ZONE)
 DAY_START = time(8, 0)  # free slots are searched between 08:00 ...
@@ -17,8 +17,25 @@ DAY_END = time(20, 0)  # ... and 20:00
 
 def _parse(value: str) -> datetime:
     """Parse an ISO 8601 date-time; a value without an offset is Asia/Jerusalem."""
-    parsed = datetime.fromisoformat(value)
+    try:
+        parsed = datetime.fromisoformat(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"'{value}' is not a valid date-time. Use ISO 8601, e.g. 2026-12-01T14:00.") from None
     return parsed.replace(tzinfo=TZ) if parsed.tzinfo is None else parsed.astimezone(TZ)
+
+
+def _parse_day(value: str) -> date_type:
+    try:
+        return date_type.fromisoformat(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"'{value}' is not a valid date. Use YYYY-MM-DD, e.g. 2026-12-01.") from None
+
+
+def _blocks_time(event: dict) -> bool:
+    """False for events marked "free" and for invitations the user declined."""
+    if event.get("transparency") == "transparent":
+        return False
+    return not any(a.get("self") and a.get("responseStatus") == "declined" for a in event.get("attendees", []))
 
 
 def _event_times(event: dict) -> tuple[datetime, datetime]:
@@ -37,20 +54,16 @@ def _fetch(start: datetime, end: datetime) -> list[dict]:
     require_scope(CALENDAR_EVENTS)
     events, page_token = [], None
     while True:
-        page = (
-            calendar()
-            .events()
-            .list(
-                calendarId="primary",
-                timeMin=start.isoformat(),
-                timeMax=end.isoformat(),
-                singleEvents=True,
-                orderBy="startTime",
-                timeZone=TIME_ZONE,
-                pageToken=page_token,
-            )
-            .execute()
+        request = calendar().events().list(
+            calendarId="primary",
+            timeMin=start.isoformat(),
+            timeMax=end.isoformat(),
+            singleEvents=True,
+            orderBy="startTime",
+            timeZone=TIME_ZONE,
+            pageToken=page_token,
         )
+        page = execute(request, "read the calendar")
         events.extend(page.get("items", []))
         page_token = page.get("nextPageToken")
         if not page_token:
@@ -78,7 +91,7 @@ def list_events(days_ahead: int = 7) -> list[dict]:
 
 
 def find_free_slots(date: str, duration_minutes: int = 30) -> list[dict]:
-    day = date_type.fromisoformat(date)
+    day = _parse_day(date)
     minutes = int(duration_minutes)
     if minutes <= 0:
         raise ValueError("duration_minutes must be greater than 0.")
@@ -88,11 +101,7 @@ def find_free_slots(date: str, duration_minutes: int = 30) -> list[dict]:
     now = datetime.now(TZ).replace(second=0, microsecond=0) + timedelta(minutes=1)
     cursor = max(window_start, now)
 
-    busy = []
-    for event in _fetch(window_start, window_end):
-        if event.get("transparency") == "transparent":  # marked "free" in the calendar
-            continue
-        busy.append(_event_times(event))
+    busy = [_event_times(event) for event in _fetch(window_start, window_end) if _blocks_time(event)]
 
     slots = []
     for start, end in sorted(busy):
@@ -123,7 +132,8 @@ def create_event(title: str, start: str, end: str, description: str = "") -> dic
         "start": {"dateTime": start_at.isoformat(), "timeZone": TIME_ZONE},
         "end": {"dateTime": end_at.isoformat(), "timeZone": TIME_ZONE},
     }
-    event = calendar().events().insert(calendarId="primary", body=body, sendUpdates="none").execute()
+    request = calendar().events().insert(calendarId="primary", body=body, sendUpdates="none")
+    event = execute(request, "create the event")
     return {
         "event_id": event["id"],
         "title": event.get("summary", title),

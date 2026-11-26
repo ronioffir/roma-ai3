@@ -1,6 +1,8 @@
 """Smoke test: start the gmail-calendar server, list its tools, call list_events.
 
-Run with:  uv run test_server.py
+Run with GOOGLE_PRIVATE_DIR set to your private folder:
+
+    GOOGLE_PRIVATE_DIR=/path/to/private-folder uv run test_server.py
 """
 
 import asyncio
@@ -12,7 +14,6 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 HERE = Path(__file__).resolve().parent
-PRIVATE_DIR = "/Users/maayanshiri/Desktop/roma-ai3"
 EXPECTED_TOOLS = {
     "search_emails",
     "read_email",
@@ -24,10 +25,14 @@ EXPECTED_TOOLS = {
 
 
 async def main() -> int:
+    private_dir = os.environ.get("GOOGLE_PRIVATE_DIR", "")
+    if not private_dir or not Path(private_dir).expanduser().is_dir():
+        print("FAIL: set GOOGLE_PRIVATE_DIR to the existing folder that holds token.json.", file=sys.stderr)
+        return 1
     server = StdioServerParameters(
         command=sys.executable,
         args=[str(HERE / "server.py")],
-        env={**os.environ, "GOOGLE_PRIVATE_DIR": PRIVATE_DIR},
+        env={**os.environ, "GOOGLE_PRIVATE_DIR": private_dir},
         cwd=str(HERE),
     )
     async with stdio_client(server) as (read, write):

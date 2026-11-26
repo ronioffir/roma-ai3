@@ -25,6 +25,9 @@ See [PRD.md](PRD.md) for the full design and security boundaries.
   (`client_secret*.json`) and `token.json`
 - Gmail API and Google Calendar API enabled in the Google Cloud project
 
+Works on macOS, Linux and Windows (the `tzdata` dependency supplies the
+Asia/Jerusalem time zone on Windows).
+
 ## Install
 
 ```bash
@@ -35,11 +38,24 @@ uv sync
 
 ## Set the private folder
 
-The server finds the Google files through one environment variable. The files
-are read from that folder and are never copied anywhere else.
+The server finds the Google files through one environment variable,
+`GOOGLE_PRIVATE_DIR`. The files are read from that folder and are never copied
+anywhere else.
+
+**Keep this folder outside the `roma-ai3` Git repository**, for example
+`~/private/gmail-calendar` or `C:\Users\<user>\private\gmail-calendar`, so the
+secret files can never be committed by accident.
+
+macOS / Linux (bash or zsh):
 
 ```bash
-export GOOGLE_PRIVATE_DIR=/Users/maayanshiri/Desktop/roma-ai3
+export GOOGLE_PRIVATE_DIR=/path/to/private-folder
+```
+
+Windows (PowerShell):
+
+```powershell
+$env:GOOGLE_PRIVATE_DIR="C:\path\to\private-folder"
 ```
 
 ## Sign in once (by hand)
@@ -53,7 +69,7 @@ uv run authorize.py
 This opens the browser, asks for the three permissions (read Gmail, compose
 drafts, calendar events), and saves `token.json` inside `GOOGLE_PRIVATE_DIR`.
 Run it again whenever a tool reports that the token is missing a permission or
-was rejected.
+was rejected. A running server picks up the new token by itself.
 
 ## Run
 
@@ -66,15 +82,64 @@ rather than by hand. To add it to Claude Code:
 
 ```bash
 claude mcp add gmail-calendar \
-  --env GOOGLE_PRIVATE_DIR=/Users/maayanshiri/Desktop/roma-ai3 \
-  -- uv run --directory /Users/maayanshiri/Desktop/roma-ai3 server.py
+  --env GOOGLE_PRIVATE_DIR=/path/to/private-folder \
+  -- uv run --directory /path/to/roma-ai3 server.py
 ```
+
+For clients that use a JSON config file (Antigravity `.agents/mcp_config.json`,
+a project `.mcp.json`, or Claude Desktop), use this with your own paths:
+
+```json
+{
+  "mcpServers": {
+    "gmail-calendar": {
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/roma-ai3", "server.py"],
+      "env": {
+        "GOOGLE_PRIVATE_DIR": "/path/to/private-folder"
+      }
+    }
+  }
+}
+```
+
+These config files hold personal paths, so `.mcp.json` and
+`.agents/mcp_config.json` are listed in `.gitignore`.
 
 To try the tools in the MCP Inspector:
 
 ```bash
 uv run mcp dev server.py
 ```
+
+## Testing / Verification
+
+**Offline unit tests.** No network, Google account or secret files needed:
+
+```bash
+uv run python -m unittest -v test_unit.py
+```
+
+They check that the server exposes exactly the six tools and nothing that
+sends or deletes, and cover the auth errors, email text handling, free-slot
+rules, date validation and the Asia/Jerusalem time zone.
+
+**Live smoke test.** Starts the real server over stdio, asks for its tool list
+and calls `list_events(days_ahead=1)`. It needs `GOOGLE_PRIVATE_DIR` and a valid
+token, and only reads:
+
+```bash
+# macOS / Linux
+GOOGLE_PRIVATE_DIR=/path/to/private-folder uv run test_server.py
+```
+
+```powershell
+# Windows PowerShell
+$env:GOOGLE_PRIVATE_DIR="C:\path\to\private-folder"; uv run test_server.py
+```
+
+It prints `PASS` and exits 0 on success. If `GOOGLE_PRIVATE_DIR` is not set or
+is not an existing folder, it prints an error and exits 1.
 
 ## Files
 
@@ -83,9 +148,14 @@ uv run mcp dev server.py
 | `server.py` | The MCP server and its 6 tools |
 | `gmail_tools.py` | Gmail logic |
 | `calendar_tools.py` | Calendar logic |
-| `google_auth.py` | Loads the saved Google token (no browser) |
+| `google_auth.py` | Loads the saved Google token (no browser) and reports API errors |
 | `authorize.py` | One-time Google sign-in, run by hand |
-| `main.py` | Last week's test program (creates a test draft and event) |
+| `test_unit.py` | Offline unit tests |
+| `test_server.py` | Live MCP smoke test over stdio |
+| `main.py` | L05 legacy test script (creates a test draft and event); not part of the server |
+| `PRD.md` | Product requirements: architecture, tools, security boundaries |
+| `reflection.md` | L06 reflection on the work |
+| `antigravity-review/` | External review of this project and the fix list that came from it |
 
 ## Secrets
 
@@ -94,7 +164,8 @@ uv run mcp dev server.py
 
 ## Prompts Log
 
-Every prompt used in this session, in order.
+Every prompt used in this session, in order. Personal folder paths, the email
+address and the git user name are replaced with placeholders.
 
 ### Prompt 1
 
@@ -111,14 +182,14 @@ In one sentence: which folder are you working in?
 ### Prompt 3
 
 ```text
-Check that the folder /Users/maayanshiri/Desktop/roma-ai3 contains a Google client file (client_secret*.json) and a token.json file. Only tell me whether each file exists and its date. Do NOT print the contents of these files.
+Check that the folder /path/to/private-folder contains a Google client file (client_secret*.json) and a token.json file. Only tell me whether each file exists and its date. Do NOT print the contents of these files.
 ```
 
 ### Prompt 4
 
 ```text
 Build an MCP server in Python in the current folder, named "gmail-calendar".
-Use the official MCP Python SDK (FastMCP), run it with uv, and use the stdio transport. It must reuse the Google client and token.json from last week located in /Users/maayanshiri/Desktop/roma-ai3; read that path from the environment variable GOOGLE_PRIVATE_DIR. Never copy these secret files into a new location, never print secrets, and never open a browser from the server.
+Use the official MCP Python SDK (FastMCP), run it with uv, and use the stdio transport. It must reuse the Google client and token.json from last week located in /path/to/private-folder; read that path from the environment variable GOOGLE_PRIVATE_DIR. Never copy these secret files into a new location, never print secrets, and never open a browser from the server.
 
 Expose exactly these 6 tools, each with a short, clear English description:
 1. search_emails(query, max_results)
@@ -143,7 +214,7 @@ Rule for the rest of this session: After every prompt I give you from now on, up
 
 ```text
 1. Confirmed, please commit and push the 12 staged files to main.
-2. Set git user.name to "maayanshiri" and user.email to "maayanshiri2002@gmail.com" for this repository only.
+2. Set git user.name to "<your-github-username>" and user.email to "<your-email>@gmail.com" for this repository only.
 3. Add "*.pdf" to .gitignore so the worksheet PDF stays untracked/ignored.
 4. Also clean up the mixed old text inside README.md (under "Prompts Log" there are leftover lines from the old README mixed between Prompt 1, 2, and 3) so README.md is completely clean before committing.
 ```
@@ -151,7 +222,7 @@ Rule for the rest of this session: After every prompt I give you from now on, up
 ### Prompt 6
 
 ```text
-Register this server in Claude Code with "claude mcp add": local scope, name "gmail-calendar", stdio transport, the environment variable GOOGLE_PRIVATE_DIR=/Users/maayanshiri/Desktop/roma-ai3, and the command "uv run --directory /Users/maayanshiri/Desktop/roma-ai3 server.py". Then update README.md Prompts Log, commit and push to GitHub, and tell me what to do next.
+Register this server in Claude Code with "claude mcp add": local scope, name "gmail-calendar", stdio transport, the environment variable GOOGLE_PRIVATE_DIR=/path/to/private-folder, and the command "uv run --directory /path/to/roma-ai3 server.py". Then update README.md Prompts Log, commit and push to GitHub, and tell me what to do next.
 ```
 
 ### Prompt 7
@@ -198,7 +269,7 @@ of .gitignore.
 ### Prompt 12
 
 ```text
-Write and run a small test script, test_server.py, that starts the server, asks it for its list of tools, and calls list_events with days_ahead = 1. Set GOOGLE_PRIVATE_DIR=/Users/maayanshiri/Desktop/roma-ai3 for the test. Show me the output.
+Write and run a small test script, test_server.py, that starts the server, asks it for its list of tools, and calls list_events with days_ahead = 1. Set GOOGLE_PRIVATE_DIR=/path/to/private-folder for the test. Show me the output.
 ```
 
 ### Prompt 13
@@ -232,4 +303,10 @@ Check my calendar for that time. If I am free, create the event and prepare a
 reply draft confirming it. If I am busy, do not create an event; prepare a
 reply draft that suggests two free times. Never send anything. Show me what
 you did, step by step.
+```
+
+### Prompt 17
+
+```text
+read antigravity-review/claude_code_fix_prompt.md and execute all instructions step by step, verifying every requirement and keeping all Python files under 150 lines.
 ```

@@ -11,8 +11,21 @@ __pycache__/
 *.pyc
 .venv/
 
-# --- macOS ---
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# --- OS and editors ---
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Local MCP client configs (hold personal paths) ---
+.mcp.json
+.agents/mcp_config.json
 
 # --- Course material ---
 *.pdf
